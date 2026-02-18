@@ -30,6 +30,7 @@ class ResponseLoggerMiddleware(BaseHTTPMiddleware):
         if path.startswith("/static/") or path in (
             "/",
             "/login",
+            "/chat",
             "/imagine",
             "/voice",
             "/admin",

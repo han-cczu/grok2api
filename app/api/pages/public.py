@@ -37,6 +37,13 @@ async def public_voice():
     return FileResponse(STATIC_DIR / "public/pages/voice.html")
 
 
+@router.get("/chat", include_in_schema=False)
+async def public_chat():
+    if not is_public_enabled():
+        raise HTTPException(status_code=404, detail="Not Found")
+    return FileResponse(STATIC_DIR / "public/pages/chat.html")
+
+
 @router.get("/video", include_in_schema=False)
 async def public_video():
     if not is_public_enabled():
