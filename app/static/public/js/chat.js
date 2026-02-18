@@ -107,6 +107,10 @@
         opt.textContent = m.display_name || m.id;
         modelSelect.appendChild(opt);
       });
+      // 默认选中 grok-4.1-fast
+      if (models.some(m => m.id === 'grok-4.1-fast')) {
+        modelSelect.value = 'grok-4.1-fast';
+      }
     } catch (e) {
       toast('加载模型列表失败', 'error');
     }
@@ -125,9 +129,28 @@
     }
   }
 
+  let autoScroll = true;
+
   function scrollToBottom() {
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    if (!autoScroll) return;
+    requestAnimationFrame(() => {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    });
   }
+
+  // 仅通过 wheel / touch 检测用户主动上滑，暂停自动滚动
+  messagesContainer.addEventListener('wheel', (e) => {
+    if (e.deltaY < 0 && isSending) autoScroll = false;
+  }, { passive: true });
+
+  let _touchY = 0;
+  messagesContainer.addEventListener('touchstart', (e) => {
+    _touchY = e.touches[0].clientY;
+  }, { passive: true });
+  messagesContainer.addEventListener('touchmove', (e) => {
+    if (e.touches[0].clientY > _touchY && isSending) autoScroll = false;
+    _touchY = e.touches[0].clientY;
+  }, { passive: true });
 
   function appendMessage(role, content) {
     const wrapper = document.createElement('div');
@@ -168,6 +191,7 @@
     }
 
     messages.push({ role: 'user', content: text });
+    autoScroll = true;
     chatInput.value = '';
     chatInput.style.height = 'auto';
     updateEmpty();
