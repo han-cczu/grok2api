@@ -158,6 +158,10 @@ if __name__ == "__main__":
         )
         workers = 1
 
+    # 显示实际可访问的地址
+    display_host = "127.0.0.1" if host == "0.0.0.0" else host
+    logger.info(f"Access URL: http://{display_host}:{port}")
+
     uvicorn.run(
         "main:app",
         host=host,

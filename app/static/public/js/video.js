@@ -314,6 +314,16 @@
         return { html: matches[matches.length - 1] };
       }
     }
+    // Linked image markdown: [![video](thumb_url)](video_url)
+    const linkedMatches = buffer.match(/\[!\[video\]\([^)]*\)\]\(([^)]+)\)/g);
+    if (linkedMatches && linkedMatches.length) {
+      const last = linkedMatches[linkedMatches.length - 1];
+      const urlMatch = last.match(/\[!\[video\]\([^)]*\)\]\(([^)]+)\)/);
+      if (urlMatch) {
+        return { url: urlMatch[1] };
+      }
+    }
+    // Simple markdown: [video](video_url)
     const mdMatches = buffer.match(/\[video\]\(([^)]+)\)/g);
     if (mdMatches && mdMatches.length) {
       const last = mdMatches[mdMatches.length - 1];
