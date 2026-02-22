@@ -10,7 +10,7 @@
   <link href="https://cdn.jsdelivr.net/npm/geist@1.0.0/dist/fonts/geist-sans/style.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/geist@1.0.0/dist/fonts/geist-mono/style.css" rel="stylesheet">
   <link href="/static/common/css/common.css?v=0.3.0" rel="stylesheet">
-  <link href="/static/public/css/chat.css?v=0.3.3" rel="stylesheet">
+  <link href="/static/public/css/chat.css?v=0.3.5" rel="stylesheet">
   <link href="/static/common/css/toast.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css">
 </head>
@@ -32,8 +32,35 @@
 
       <!-- Input section -->
       <div class="chat-input-section">
+        <div class="chat-role-toolbar">
+          <div class="chat-role-picker">
+            <span class="chat-role-label">角色卡</span>
+            <select id="roleCardSelect" class="chat-role-select">
+              <option value="">未启用角色</option>
+            </select>
+          </div>
+          <button id="roleManageBtn" type="button" class="chat-role-manage-btn">管理角色</button>
+        </div>
         <div class="chat-input-bar">
-          <textarea id="chatInput" rows="1" placeholder="输入消息... (Shift+Enter 换行)"></textarea>
+          <button id="clearBtn" class="chat-attach-btn" title="清空输入/对话">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+          <button id="attachBtn" class="chat-attach-btn" title="添加附件" style="position: relative;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path>
+            </svg>
+            <span id="attachCount" style="display:none;position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#111;color:#fff;font-size:10px;line-height:16px;text-align:center;"></span>
+          </button>
+          <input id="fileInput" type="file" class="hidden" multiple
+            accept="image/*,.pdf,.txt,.md,.csv,.json,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.7z">
+          <textarea id="chatInput" rows="1" placeholder="询问任何内容"></textarea>
+          <select id="modelSelect" class="chat-model-select">
+            <option value="">加载中...</option>
+          </select>
           <button id="sendBtn" class="chat-send-btn" title="发送">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
@@ -42,22 +69,63 @@
             </svg>
           </button>
         </div>
-        <div class="chat-input-controls">
-          <select id="modelSelect" class="geist-input">
-            <option value="">加载中...</option>
-          </select>
-          <button id="clearBtn" class="geist-button-outline" style="height: 32px; display: flex; align-items: center; gap: 6px;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-            清空
-          </button>
-        </div>
       </div>
 
     </div>
   </main>
+
+  <div id="roleManagerModal" class="chat-modal hidden" aria-hidden="true">
+    <div class="chat-modal-backdrop" data-close-role-modal></div>
+    <div class="chat-modal-panel" role="dialog" aria-modal="true" aria-labelledby="roleModalTitle">
+      <div class="chat-modal-header">
+        <h2 id="roleModalTitle" class="chat-modal-title">角色卡管理</h2>
+        <button id="roleModalCloseBtn" type="button" class="chat-modal-close" aria-label="关闭">×</button>
+      </div>
+      <div class="role-manager-body">
+        <section class="role-list-section">
+          <h3 class="role-section-title">已保存角色</h3>
+          <div id="roleCardList" class="role-card-list"></div>
+        </section>
+        <section class="role-form-section">
+          <h3 class="role-section-title">新建 / 编辑角色</h3>
+          <form id="roleForm" class="role-form">
+            <input id="roleFormId" type="hidden">
+            <label class="role-form-label" for="roleNameInput">角色名称</label>
+            <input id="roleNameInput" class="role-form-input" type="text" maxlength="30" placeholder="例如：产品经理小助理" required>
+
+            <label class="role-form-label" for="roleDescriptionInput">角色简介（可选）</label>
+            <input id="roleDescriptionInput" class="role-form-input" type="text" maxlength="120" placeholder="用于列表展示，不注入模型">
+
+            <label class="role-form-label" for="roleOpeningInput">开场白（可选）</label>
+            <textarea id="roleOpeningInput" class="role-form-textarea" rows="3" maxlength="500" placeholder="切换到该角色后自动发送"></textarea>
+
+            <label class="role-form-label" for="rolePromptInput">角色提示词（System）</label>
+            <textarea id="rolePromptInput" class="role-form-textarea role-prompt-textarea" rows="6" maxlength="4000" placeholder="定义该角色的身份、语气、约束与输出风格" required></textarea>
+
+            <div class="role-form-actions">
+              <button id="roleFormResetBtn" type="button" class="role-form-btn role-form-btn-ghost">重置</button>
+              <button id="roleFormSubmitBtn" type="submit" class="role-form-btn role-form-btn-primary">保存角色</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div id="roleSwitchModal" class="chat-modal hidden" aria-hidden="true">
+    <div class="chat-modal-backdrop"></div>
+    <div class="chat-modal-panel chat-modal-panel-sm" role="dialog" aria-modal="true" aria-labelledby="roleSwitchTitle">
+      <div class="chat-modal-header">
+        <h2 id="roleSwitchTitle" class="chat-modal-title">切换角色</h2>
+      </div>
+      <p id="roleSwitchText" class="role-switch-text"></p>
+      <div class="role-switch-actions">
+        <button id="switchClearBtn" type="button" class="role-form-btn role-form-btn-primary">清空并开始新会话</button>
+        <button id="switchKeepBtn" type="button" class="role-form-btn role-form-btn-ghost">保留当前会话并仅后续生效</button>
+        <button id="switchCancelBtn" type="button" class="role-form-btn role-form-btn-ghost">取消</button>
+      </div>
+    </div>
+  </div>
 
   <div id="app-footer"></div>
 
@@ -67,7 +135,7 @@
   <script src="/static/common/js/toast.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
-  <script src="/static/public/js/chat.js?v=0.3.3"></script>
+  <script src="/static/public/js/chat.js?v=0.3.5"></script>
 </body>
 
 </html>

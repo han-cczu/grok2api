@@ -6,6 +6,7 @@ from app.api.v1.public_api.chat import router as chat_router
 from app.api.v1.public_api.imagine import router as imagine_router
 from app.api.v1.public_api.video import router as video_router
 from app.api.v1.public_api.voice import router as voice_router
+from app.api.v1.public_api.image_editor import router as editor_router
 
 router = APIRouter()
 
@@ -13,5 +14,6 @@ router.include_router(chat_router)
 router.include_router(imagine_router)
 router.include_router(video_router)
 router.include_router(voice_router)
+router.include_router(editor_router)
 
 __all__ = ["router"]

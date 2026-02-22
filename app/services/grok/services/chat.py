@@ -188,30 +188,43 @@ class GrokChatService:
         )
 
         browser = get_config("proxy.browser")
+        session = ResettableSession(impersonate=browser)
+        sem = _get_chat_semaphore()
+        await sem.acquire()
+
+        try:
+            # Eagerly issue upstream request here so ChatService can catch
+            # UpstreamException (especially 429) before StreamingResponse starts.
+            stream_response = await AppChatReverse.request(
+                session,
+                token,
+                message=message,
+                model=model,
+                mode=mode,
+                file_attachments=file_attachments,
+                tool_overrides=tool_overrides,
+                model_config_override=model_config_override,
+            )
+        except Exception:
+            sem.release()
+            try:
+                await session.close()
+            except Exception:
+                pass
+            raise
+
+        logger.info(f"Chat connected: model={model}, stream={stream}")
 
         async def _stream():
-            session = ResettableSession(impersonate=browser)
             try:
-                async with _get_chat_semaphore():
-                    stream_response = await AppChatReverse.request(
-                        session,
-                        token,
-                        message=message,
-                        model=model,
-                        mode=mode,
-                        file_attachments=file_attachments,
-                        tool_overrides=tool_overrides,
-                        model_config_override=model_config_override,
-                    )
-                    logger.info(f"Chat connected: model={model}, stream={stream}")
-                    async for line in stream_response:
-                        yield line
-            except Exception:
+                async for line in stream_response:
+                    yield line
+            finally:
+                sem.release()
                 try:
                     await session.close()
                 except Exception:
                     pass
-                raise
 
         return _stream()
 
@@ -501,6 +514,18 @@ class StreamProcessor(proc_base.BaseProcessor):
         }
         return f"data: {orjson.dumps(chunk).decode()}\n\n"
 
+    async def _emit_error_and_done(self, message: str) -> AsyncGenerator[str, None]:
+        """Emit a graceful error chunk and close stream."""
+        if not self.role_sent:
+            yield self._sse(role="assistant")
+            self.role_sent = True
+        if self.think_opened:
+            yield self._sse("\n</think>\n")
+            self.think_opened = False
+        yield self._sse(f"Error: {message}\n")
+        yield self._sse(finish="stop")
+        yield "data: [DONE]\n\n"
+
     async def process(self, response: AsyncIterable[bytes]) -> AsyncGenerator[str, None]:
         """Process stream response.
         
@@ -618,35 +643,47 @@ class StreamProcessor(proc_base.BaseProcessor):
         except asyncio.CancelledError:
             logger.debug("Stream cancelled by client", extra={"model": self.model})
         except StreamIdleTimeoutError as e:
-            raise UpstreamException(
-                message=f"Stream idle timeout after {e.idle_seconds}s",
-                status_code=504,
-                details={
-                    "error": str(e),
-                    "type": "stream_idle_timeout",
-                    "idle_seconds": e.idle_seconds,
-                },
+            logger.warning(
+                f"Stream idle timeout after {e.idle_seconds}s", extra={"model": self.model}
             )
+            async for chunk in self._emit_error_and_done(
+                f"Stream idle timeout after {e.idle_seconds}s"
+            ):
+                yield chunk
         except RequestsError as e:
             if proc_base._is_http2_error(e):
                 logger.warning(f"HTTP/2 stream error: {e}", extra={"model": self.model})
-                raise UpstreamException(
-                    message="Upstream connection closed unexpectedly",
-                    status_code=502,
-                    details={"error": str(e), "type": "http2_stream_error"},
+                async for chunk in self._emit_error_and_done(
+                    "Upstream connection closed unexpectedly"
+                ):
+                    yield chunk
+            else:
+                logger.error(f"Stream request error: {e}", extra={"model": self.model})
+                async for chunk in self._emit_error_and_done(f"Upstream request failed: {e}"):
+                    yield chunk
+        except UpstreamException as e:
+            details = e.details if isinstance(e.details, dict) else {}
+            status = details.get("status")
+            if status == 429:
+                logger.warning(
+                    "Upstream rate limited during stream (429)", extra={"model": self.model}
                 )
-            logger.error(f"Stream request error: {e}", extra={"model": self.model})
-            raise UpstreamException(
-                message=f"Upstream request failed: {e}",
-                status_code=502,
-                details={"error": str(e)},
-            )
+                message = "Upstream rate limited (429), please retry shortly."
+            else:
+                logger.error(
+                    f"Stream upstream error: {e}",
+                    extra={"model": self.model, "error_type": type(e).__name__},
+                )
+                message = e.message or "Upstream error"
+            async for chunk in self._emit_error_and_done(message):
+                yield chunk
         except Exception as e:
             logger.error(
                 f"Stream processing error: {e}",
                 extra={"model": self.model, "error_type": type(e).__name__},
             )
-            raise
+            async for chunk in self._emit_error_and_done("Stream processing failed"):
+                yield chunk
         finally:
             await self.close()
 

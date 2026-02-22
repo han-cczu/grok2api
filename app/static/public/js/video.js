@@ -144,8 +144,15 @@
     downloadBtn.textContent = '下载';
     downloadBtn.disabled = true;
 
+    const wbBtn = document.createElement('button');
+    wbBtn.className = 'geist-button-outline text-xs px-3 video-add-wb';
+    wbBtn.type = 'button';
+    wbBtn.textContent = '+ 工作台';
+    wbBtn.disabled = true;
+
     actions.appendChild(openBtn);
     actions.appendChild(downloadBtn);
+    actions.appendChild(wbBtn);
     header.appendChild(title);
     header.appendChild(actions);
 
@@ -196,6 +203,10 @@
     if (downloadBtn) {
       downloadBtn.dataset.url = safeUrl;
       downloadBtn.disabled = !safeUrl;
+    }
+    const wbBtn = item.querySelector('.video-add-wb');
+    if (wbBtn) {
+      wbBtn.disabled = !safeUrl;
     }
     if (safeUrl) {
       item.classList.remove('is-pending');
@@ -560,6 +571,18 @@
     videoStage.addEventListener('click', async (event) => {
       const target = event.target;
       if (!(target instanceof HTMLElement)) return;
+      if (target.classList.contains('video-add-wb')) {
+        event.preventDefault();
+        const item = target.closest('.video-item');
+        if (!item) return;
+        const url = item.dataset.url || '';
+        const titleEl = item.querySelector('.video-item-title');
+        const name = titleEl ? titleEl.textContent : 'Video';
+        if (url) {
+          window.dispatchEvent(new CustomEvent('workbench:add', { detail: { url, name } }));
+        }
+        return;
+      }
       if (!target.classList.contains('video-download')) return;
       event.preventDefault();
       const item = target.closest('.video-item');

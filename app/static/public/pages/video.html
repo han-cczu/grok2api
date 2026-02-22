@@ -153,6 +153,70 @@
         <div id="videoEmpty" class="video-empty">等待生成视频</div>
         <div id="videoStage" class="video-stage hidden"></div>
       </div>
+
+      <!-- 视频工作台 -->
+      <div class="video-card workbench-card">
+        <div class="workbench-header">
+          <div class="card-title">视频工作台</div>
+          <div class="workbench-actions">
+            <button id="wbUploadBtn" class="geist-button-outline text-xs px-3" type="button">上传视频</button>
+            <button id="wbClearBtn" class="geist-button-outline text-xs px-3" type="button">清空</button>
+            <button id="wbExportBtn" class="geist-button text-xs px-3" type="button">导出</button>
+          </div>
+        </div>
+        <div id="wbEmpty" class="workbench-empty">将生成的视频添加到工作台，或上传本地视频进行拼接、裁剪和转场</div>
+        <div id="wbTimeline" class="workbench-timeline hidden"></div>
+        <div id="wbInspector" class="workbench-inspector hidden">
+          <div class="wb-inspector-title">片段编辑</div>
+          <div class="wb-inspector-body">
+            <div class="wb-preview-wrap">
+              <video id="wbPreviewVideo" controls preload="metadata"></video>
+            </div>
+            <div class="wb-trim-section">
+              <div class="wb-trim-row">
+                <label class="field-label">起始时间</label>
+                <input id="wbTrimStart" type="range" min="0" max="100" step="0.1" value="0" class="wb-range">
+                <span id="wbTrimStartVal" class="wb-trim-val">0.0s</span>
+              </div>
+              <div class="wb-trim-row">
+                <label class="field-label">结束时间</label>
+                <input id="wbTrimEnd" type="range" min="0" max="100" step="0.1" value="100" class="wb-range">
+                <span id="wbTrimEndVal" class="wb-trim-val">0.0s</span>
+              </div>
+              <div class="wb-trim-duration">裁剪后时长: <span id="wbTrimDuration">0.0s</span></div>
+            </div>
+            <div class="wb-transition-section">
+              <div class="wb-transition-row">
+                <label class="field-label">转场效果</label>
+                <select id="wbTransitionType" class="geist-input wb-select">
+                  <option value="none">无 (直接切换)</option>
+                  <option value="fade">淡入淡出</option>
+                  <option value="dissolve">溶解</option>
+                  <option value="wipeleft">左擦除</option>
+                  <option value="wiperight">右擦除</option>
+                  <option value="slideup">上滑</option>
+                  <option value="slidedown">下滑</option>
+                </select>
+              </div>
+              <div class="wb-transition-row">
+                <label class="field-label">转场时长</label>
+                <input id="wbTransitionDur" type="number" min="0.1" max="2" step="0.1" value="0.5" class="geist-input wb-input-sm">
+                <span class="wb-unit">秒</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="wbExportStatus" class="workbench-export-status hidden">
+          <div class="wb-export-phase" id="wbExportPhase">准备中...</div>
+          <div class="progress-bar">
+            <div id="wbExportFill" class="progress-fill"></div>
+          </div>
+          <div class="progress-meta">
+            <span id="wbExportPercent">0%</span>
+          </div>
+        </div>
+        <input id="wbFileInput" type="file" accept="video/*" multiple style="display:none">
+      </div>
     </div>
   </main>
 
@@ -163,6 +227,8 @@
   <script src="/static/common/js/footer.js?v=0.3.1"></script>
   <script src="/static/common/js/toast.js"></script>
   <script src="/static/public/js/video.js?v=0.3.0"></script>
+  <script src="/static/public/js/vendor/ffmpeg.js"></script>
+  <script src="/static/public/js/workbench.js?v=0.3.0"></script>
 </body>
 
 </html>

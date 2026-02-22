@@ -10,6 +10,10 @@ body {
   background-color: var(--chat-bg);
 }
 
+body.chat-modal-open {
+  overflow: hidden;
+}
+
 /* ── Layout ── */
 .chat-main {
   flex: 1;
@@ -74,14 +78,86 @@ body {
   padding: 16px 0 20px;
 }
 
+.chat-role-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.chat-role-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.chat-role-label {
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.chat-role-select {
+  flex: 1;
+  height: 32px;
+  min-width: 120px;
+  max-width: 320px;
+  padding: 0 28px 0 10px;
+  font-size: 12px;
+  color: #4b5563;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+.chat-role-select:focus {
+  border-color: #9ca3af;
+}
+
+.chat-role-manage-btn {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.chat-role-manage-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.chat-role-manage-btn:disabled,
+.chat-role-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .chat-input-bar {
   display: flex;
-  align-items: flex-end;
-  gap: 8px;
+  align-items: center;
+  gap: 4px;
   background: #fff;
   border: 1px solid #e5e5e5;
-  border-radius: 14px;
-  padding: 8px 10px;
+  border-radius: 999px;
+  padding: 6px 6px 6px 6px;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -91,14 +167,35 @@ body {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.09);
 }
 
+/* Attach / clear button */
+.chat-attach-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.chat-attach-btn:hover {
+  background: #e5e7eb;
+  color: #333;
+}
+
 .chat-input-bar textarea {
   flex: 1;
   resize: none;
-  min-height: 36px;
-  max-height: 160px;
+  min-height: 24px;
+  max-height: 120px;
   font-size: 14px;
-  line-height: 1.6;
-  padding: 4px 6px;
+  line-height: 24px;
+  padding: 6px 8px;
   border: none;
   background: transparent;
   outline: none;
@@ -110,16 +207,52 @@ body {
   color: #aaa;
 }
 
+/* Model selector inside input bar */
+.chat-model-select {
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 28px 0 10px;
+  font-size: 12px;
+  color: #555;
+  background: #f3f4f6;
+  border: 1px solid #e5e5e5;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  transition: border-color 0.15s, background 0.15s;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-model-select:hover {
+  background-color: #e9eaec;
+  border-color: #d0d0d0;
+}
+
+.chat-model-select:focus {
+  border-color: #bbb;
+}
+
+/* Send button */
 .chat-send-btn {
   height: 36px;
   width: 36px;
-  border-radius: 9px;
+  border-radius: 50%;
   background: #111;
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  border: none;
+  cursor: pointer;
   transition: opacity 0.15s;
 }
 
@@ -132,19 +265,270 @@ body {
   cursor: not-allowed;
 }
 
-.chat-input-controls {
+/* ── Role manager modal ── */
+.chat-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-  padding: 0 2px;
+  justify-content: center;
+  padding: 16px;
 }
 
-.chat-input-controls .geist-input {
-  flex: 1;
-  min-width: 0;
-  height: 32px;
+.chat-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.48);
+  backdrop-filter: blur(2px);
+}
+
+.chat-modal-panel {
+  position: relative;
+  width: min(920px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+}
+
+.chat-modal-panel-sm {
+  width: min(520px, calc(100vw - 24px));
+}
+
+.chat-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.chat-modal-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.chat-modal-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: #f3f4f6;
+  color: #4b5563;
+  font-size: 20px;
+  line-height: 1;
+  text-align: center;
+  cursor: pointer;
+}
+
+.role-manager-body {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 14px;
+}
+
+.role-list-section,
+.role-form-section {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.role-section-title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #111827;
+  font-weight: 700;
+}
+
+.role-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 420px;
+  overflow: auto;
+}
+
+.role-card-empty {
+  padding: 12px;
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+  color: #6b7280;
   font-size: 12px;
+  text-align: center;
+}
+
+.role-card-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  padding: 10px;
+}
+
+.role-card-item.is-active {
+  border-color: #9ca3af;
+  box-shadow: 0 0 0 1px rgba(17, 24, 39, 0.06);
+}
+
+.role-card-item-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.role-card-name {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role-card-active-tag {
+  font-size: 11px;
+  color: #1f2937;
+  background: #e5e7eb;
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.role-card-desc {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.5;
+  min-height: 18px;
+}
+
+.role-card-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.role-card-btn {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.role-card-btn:hover {
+  background: #f3f4f6;
+}
+
+.role-card-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.role-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.role-form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.role-form-input,
+.role-form-textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #111827;
+  outline: none;
+}
+
+.role-form-textarea {
+  resize: vertical;
+  min-height: 80px;
+  max-height: 280px;
+}
+
+.role-prompt-textarea {
+  min-height: 130px;
+}
+
+.role-form-input:focus,
+.role-form-textarea:focus {
+  border-color: #9ca3af;
+}
+
+.role-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.role-form-btn {
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.role-form-btn-primary {
+  color: #fff;
+  background: #111827;
+  border-color: #111827;
+}
+
+.role-form-btn-primary:hover {
+  background: #1f2937;
+}
+
+.role-form-btn-ghost {
+  color: #374151;
+  background: #fff;
+}
+
+.role-form-btn-ghost:hover {
+  background: #f9fafb;
+}
+
+.role-form-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.role-switch-text {
+  margin: 8px 0 14px;
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.role-switch-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 /* ── Message bubbles ── */
@@ -410,7 +794,7 @@ body {
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .chat-container {
-    padding: 0 16px;
+    padding: 0 12px;
   }
 
   .chat-message {
@@ -421,7 +805,35 @@ body {
     font-size: 22px;
   }
 
-  .chat-input-controls {
-    flex-wrap: wrap;
+  .chat-model-select {
+    max-width: 110px;
+    font-size: 11px;
+    padding: 0 24px 0 8px;
+  }
+
+  .chat-role-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .chat-role-picker {
+    width: 100%;
+  }
+
+  .chat-role-select {
+    max-width: none;
+  }
+
+  .chat-role-manage-btn {
+    width: 100%;
+  }
+
+  .role-manager-body {
+    grid-template-columns: 1fr;
+  }
+
+  .chat-modal-panel {
+    padding: 12px;
+    max-height: calc(100vh - 16px);
   }
 }
