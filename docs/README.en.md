@@ -5,7 +5,7 @@
 > [!NOTE]
 > This project is for learning and research only. You must comply with Grok **Terms of Use** and **local laws and regulations**. Do not use for illegal purposes.
 
-Grok2API rebuilt with **FastAPI**, fully aligned with the latest web call format. Supports streaming/non-streaming chat, image generation/editing, video generation/upscale (text-to-video and image-to-video), deep reasoning, token pool concurrency, and automatic load balancing.
+Grok2API rebuilt with **FastAPI**, fully aligned with the latest web call format. Supports streaming/non-streaming chat, image generation/editing, video generation (text-to-video and image-to-video), voice chat, deep reasoning, token pool concurrency, and automatic load balancing.
 
 <img width="2618" height="1658" alt="image" src="https://github.com/user-attachments/assets/a8c406f8-4c28-483a-8099-c23df5df7605" />
 
@@ -63,6 +63,20 @@ docker compose up -d
 
 <br>
 
+## Public Features
+
+Enable `app.public_enabled` to access built-in frontend pages:
+
+| Page | Path | Description |
+| :-- | :-- | :-- |
+| Chat | `/chat` | Multi-turn chat, streaming, deep reasoning, model switching, role cards |
+| Image Generation | `/imagine` | Masonry image generation, supports WebSocket / SSE |
+| Image Editor | `/editor` | Image editing workbench, text-to-image / image-to-image / iterative editing |
+| Video Generation | `/video` | Text-to-video / image-to-video, built-in FFmpeg workbench for trimming & concatenation |
+| Voice Chat | `/voice` | Real-time voice chat based on LiveKit |
+
+<br>
+
 ## Environment Variables
 
 > Configure `.env`
@@ -104,6 +118,7 @@ docker compose up -d
 | `grok-4.1-fast` | 1 | Basic/Super | Yes | Yes | - |
 | `grok-4.1-expert` | 4 | Basic/Super | Yes | Yes | - |
 | `grok-4.1-thinking` | 4 | Basic/Super | Yes | Yes | - |
+| `grok-4.20-beta` | 1 | Basic/Super | Yes | Yes | - |
 | `grok-imagine-1.0` | - | Basic/Super | - | Yes | - |
 | `grok-imagine-1.0-edit` | - | Basic/Super | - | Yes | - |
 | `grok-imagine-1.0-video` | - | Basic/Super | - | - | Yes |
@@ -114,14 +129,14 @@ docker compose up -d
 
 ### `POST /v1/chat/completions`
 
-> Generic endpoint: chat, image generation, image editing, video generation, video upscaling
+> Generic endpoint: chat, image generation, image editing, video generation
 
 ```bash
 curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $GROK2API_API_KEY" \
   -d '{
-    "model": "grok-4",
+    "model": "grok-4.1-fast",
     "messages": [{"role":"user","content":"Hello"}]
   }'
 ```
@@ -277,8 +292,10 @@ Config file: `data/config.toml`
 | **app** | `app_url` | App URL | External base URL used for file links. | `http://127.0.0.1:8000` |
 |  | `app_key` | Admin password | Login password for admin panel. | `grok2api` |
 |  | `api_key` | API key | Optional API key for access. | `""` |
+|  | `public_enabled` | Public features | Enable public feature pages (chat/image/editor/video/voice). | `false` |
+|  | `public_key` | Public key | Public feature access key (optional). | `""` |
 |  | `image_format` | Image format | `url` or `base64`. | `url` |
-|  | `video_format` | Video format | `html` or `url` (processed link). | `html` |
+|  | `video_format` | Video format | `markdown`, `url` or `html`. | `markdown` |
 |  | `temporary` | Temporary chat | Enable temporary chat mode. | `true` |
 |  | `disable_memory` | Disable memory | Disable Grok memory. | `true` |
 |  | `stream` | Stream | Enable streaming by default. | `true` |
@@ -290,25 +307,25 @@ Config file: `data/config.toml`
 |  | `cf_clearance` | CF Clearance | Cloudflare clearance cookie. | `""` |
 |  | `browser` | Browser fingerprint | curl_cffi fingerprint (e.g. chrome136). | `chrome136` |
 |  | `user_agent` | User-Agent | HTTP User-Agent string. | `Mozilla/5.0 (Macintosh; ...)` |
-| **voice** | `timeout` | Timeout | Voice request timeout (seconds). | `120` |
-| **chat** | `concurrent` | Concurrency | Reverse interface concurrency limit. | `10` |
+| **chat** | `concurrent` | Concurrency | Reverse interface concurrency limit. | `50` |
 |  | `timeout` | Timeout | Reverse request timeout (seconds). | `60` |
 |  | `stream_timeout` | Stream idle timeout | Stream idle timeout (seconds). | `60` |
-| **video** | `concurrent` | Concurrency | Reverse interface concurrency limit. | `10` |
-|  | `timeout` | Timeout | Reverse request timeout (seconds). | `60` |
-|  | `stream_timeout` | Stream idle timeout | Stream idle timeout (seconds). | `60` |
-| **retry** | `max_retry` | Max retry | Max retries for upstream failures. | `3` |
-|  | `retry_status_codes` | Retry codes | HTTP status codes that trigger retry. | `[401, 429, 403]` |
-|  | `retry_backoff_base` | Backoff base | Retry backoff base seconds. | `0.5` |
-|  | `retry_backoff_factor` | Backoff factor | Exponential backoff factor. | `2.0` |
-|  | `retry_backoff_max` | Backoff max | Max delay per retry (seconds). | `30.0` |
-|  | `retry_budget` | Retry budget | Max total retry time (seconds). | `90.0` |
-| **image** | `timeout` | Timeout | WebSocket timeout (seconds). | `120` |
-|  | `stream_timeout` | Stream idle timeout | WS stream idle timeout (seconds). | `120` |
+| **image** | `timeout` | Timeout | WebSocket timeout (seconds). | `60` |
+|  | `stream_timeout` | Stream idle timeout | WS stream idle timeout (seconds). | `60` |
 |  | `final_timeout` | Final timeout | Wait time after medium image (seconds). | `15` |
 |  | `nsfw` | NSFW | Enable NSFW. | `true` |
 |  | `medium_min_bytes` | Medium min bytes | Minimum size for medium image. | `30000` |
 |  | `final_min_bytes` | Final min bytes | Minimum size for final image (JPG > 100KB typical). | `100000` |
+| **video** | `concurrent` | Concurrency | Reverse interface concurrency limit. | `100` |
+|  | `timeout` | Timeout | Reverse request timeout (seconds). | `60` |
+|  | `stream_timeout` | Stream idle timeout | Stream idle timeout (seconds). | `60` |
+| **voice** | `timeout` | Timeout | Voice request timeout (seconds). | `60` |
+| **retry** | `max_retry` | Max retry | Max retries for upstream failures. | `3` |
+|  | `retry_status_codes` | Retry codes | HTTP status codes that trigger retry. | `[401, 429, 403]` |
+|  | `retry_backoff_base` | Backoff base | Retry backoff base seconds. | `0.5` |
+|  | `retry_backoff_factor` | Backoff factor | Exponential backoff factor. | `2.0` |
+|  | `retry_backoff_max` | Backoff max | Max delay per retry (seconds). | `20.0` |
+|  | `retry_budget` | Retry budget | Max total retry time (seconds). | `60.0` |
 | **token** | `auto_refresh` | Auto refresh | Enable token auto refresh. | `true` |
 |  | `refresh_interval_hours` | Refresh interval | Basic token refresh interval (hours). | `8` |
 |  | `super_refresh_interval_hours` | Super refresh interval | Super token refresh interval (hours). | `2` |
@@ -316,26 +333,22 @@ Config file: `data/config.toml`
 |  | `save_delay_ms` | Save delay | Merge write delay (ms). | `500` |
 |  | `reload_interval_sec` | Reload interval | Multi-worker token reload interval (seconds). | `30` |
 | **cache** | `enable_auto_clean` | Auto clean | Enable cache auto cleanup. | `true` |
-|  | `limit_mb` | Size limit | Cleanup threshold (MB). | `1024` |
-| **asset** | `upload_concurrent` | Upload concurrency | Max upload concurrency (recommended 30). | `30` |
+|  | `limit_mb` | Size limit | Cleanup threshold (MB). | `512` |
+| **asset** | `upload_concurrent` | Upload concurrency | Max upload concurrency. | `100` |
 |  | `upload_timeout` | Upload timeout | Upload timeout (seconds). | `60` |
-|  | `download_concurrent` | Download concurrency | Max download concurrency (recommended 30). | `30` |
+|  | `download_concurrent` | Download concurrency | Max download concurrency. | `100` |
 |  | `download_timeout` | Download timeout | Download timeout (seconds). | `60` |
-|  | `list_concurrent` | List concurrency | Max list concurrency (recommended 10). | `10` |
+|  | `list_concurrent` | List concurrency | Max list concurrency. | `100` |
 |  | `list_timeout` | List timeout | List timeout (seconds). | `60` |
-|  | `list_batch_size` | List batch size | Tokens per list batch (recommended 10). | `10` |
-|  | `delete_concurrent` | Delete concurrency | Max delete concurrency (recommended 10). | `10` |
+|  | `list_batch_size` | List batch size | Tokens per list batch. | `50` |
+|  | `delete_concurrent` | Delete concurrency | Max delete concurrency. | `100` |
 |  | `delete_timeout` | Delete timeout | Delete timeout (seconds). | `60` |
-|  | `delete_batch_size` | Delete batch size | Tokens per delete batch (recommended 10). | `10` |
-| **nsfw** | `concurrent` | Concurrency | NSFW batch enable concurrency (recommended 10). | `10` |
-|  | `batch_size` | Batch size | NSFW batch size (recommended 50). | `50` |
+|  | `delete_batch_size` | Delete batch size | Tokens per delete batch. | `50` |
+| **nsfw** | `concurrent` | Concurrency | NSFW batch enable concurrency. | `60` |
+|  | `batch_size` | Batch size | NSFW batch size. | `30` |
 |  | `timeout` | Timeout | NSFW request timeout (seconds). | `60` |
-| **usage** | `concurrent` | Concurrency | Usage refresh concurrency (recommended 10). | `10` |
-|  | `batch_size` | Batch size | Usage batch size (recommended 50). | `50` |
+| **usage** | `concurrent` | Concurrency | Usage refresh concurrency. | `100` |
+|  | `batch_size` | Batch size | Usage batch size. | `50` |
 |  | `timeout` | Timeout | Usage request timeout (seconds). | `60` |
 
 <br>
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=Chenyme/grok2api&type=Timeline)](https://star-history.com/#Chenyme/grok2api&Timeline)
